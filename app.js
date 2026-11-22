@@ -411,7 +411,7 @@ function showOrder(o){
       <div class="pay-total"><span>Send exactly</span><span class="big">${peso(o.total)}</span></div>
       ${g.qr ? `<img class="qr" src="${STORE}/gcash-qr" alt="GCash QR code to pay">` : ""}
       ${g.number ? `<div class="gc"><div class="row"><span>GCash name</span><b>${esc(g.name || "")}</b></div>
-        <span class="lbl">GCash number</span><div class="numrow"><span class="num">${esc(g.number)}</span><button class="btn ghost" type="button" data-copy="${esc(g.number)}">Copy number</button></div></div>` : ""}
+        <span class="lbl">GCash number</span><div class="numrow"><span class="num">${esc(g.number)}</span><button class="btn ghost" type="button" data-copy="${esc(g.number.replace(/\s/g, ""))}">Copy number</button></div></div>` : ""}
       <p class="note">After paying, take a <b>screenshot of your GCash receipt</b> and upload it here.</p>
       <form id="refForm" class="pay" style="padding:0" novalidate>
         <label class="f">GCash receipt screenshot<input type="file" id="coShot" accept="image/*"></label>
