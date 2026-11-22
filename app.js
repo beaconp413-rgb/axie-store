@@ -334,6 +334,14 @@ const recall = k => { try { return localStorage.getItem(k) || ""; } catch(e) { r
 if (window.CHECKOUT) { $("#checkout").hidden = false; document.body.classList.add("has-checkout"); }
 payBody.addEventListener("input", () => payBody.querySelectorAll(".err").forEach(e => e.textContent = ""));
 
+// phone screenshots can be several MB: resize to max 1600px and send as JPEG
+async function shrink(file){
+  const bmp = await createImageBitmap(file);
+  const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement("canvas"); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(bmp, 0, 0, c.width, c.height);
+  return new Promise((ok, no) => c.toBlob(b => b ? ok(b) : no(new Error("resize")), "image/jpeg", 0.85));
+}
 async function api(path, opts){
   const r = await fetch(STORE + path, { cache: "no-store", ...opts, headers: { "Content-Type": "application/json" } });
   const j = await r.json().catch(() => ({}));
@@ -404,11 +412,12 @@ function showOrder(o){
       ${g.qr ? `<img class="qr" src="${STORE}/gcash-qr" alt="GCash QR code to pay">` : ""}
       ${g.number ? `<div class="gc"><div class="row"><span>GCash name</span><b>${esc(g.name || "")}</b></div>
         <span class="lbl">GCash number</span><div class="numrow"><span class="num">${esc(g.number)}</span><button class="btn ghost" type="button" data-copy="${esc(g.number)}">Copy number</button></div></div>` : ""}
-      <p class="note">After paying, copy the <b>Ref. No.</b> from your GCash receipt and paste it below.</p>
+      <p class="note">After paying, take a <b>screenshot of your GCash receipt</b> and upload it here.</p>
       <form id="refForm" class="pay" style="padding:0" novalidate>
-        <label class="f">GCash reference number<input type="text" class="mono" id="coRef" inputmode="numeric" maxlength="24" placeholder="13 digits"></label>
+        <label class="f">GCash receipt screenshot<input type="file" id="coShot" accept="image/*"></label>
+        <img id="coPrev" class="qr" alt="Your receipt" hidden style="aspect-ratio:auto;max-height:260px">
         <p class="err" id="refErr" role="alert"></p>
-        <button class="btn" type="submit" id="refGo">I've paid</button>
+        <button class="btn" type="submit" id="refGo">Send receipt</button>
       </form>
       <p class="note">Your Axies will be sent to:</p><div class="addr">${roninShow(o.ronin)}</div>`;
     const tick = () => {
@@ -417,21 +426,33 @@ function showOrder(o){
       if (!left) { clearInterval(tickT); refreshOrder(); }
     };
     tick(); tickT = setInterval(tick, 1000);
+    let shot = null;
+    $("#coShot").addEventListener("change", async e => {
+      const f = e.target.files[0]; $("#refErr").textContent = ""; shot = null; $("#coPrev").hidden = true;
+      if (!f) return;
+      if (!/^image\//.test(f.type)) { $("#refErr").textContent = "Choose a screenshot (an image)."; return; }
+      try { shot = await shrink(f); } catch (x) { shot = f; }
+      $("#coPrev").src = URL.createObjectURL(shot); $("#coPrev").hidden = false;
+    });
     $("#refForm").addEventListener("submit", async e => {
       e.preventDefault();
-      const ref = $("#coRef").value.replace(/\D/g, "");
-      if (ref.length < 10) { $("#refErr").textContent = "Paste the reference number from your GCash receipt (13 digits)."; return; }
+      if (!shot) { $("#refErr").textContent = "Upload the screenshot of your GCash receipt first."; return; }
       const go = $("#refGo"); go.disabled = true; go.textContent = "Sending…";
-      try { const n = await api(`/order/${o.code}/paid`, { method: "POST", body: JSON.stringify({ ref }) }); setOrder(n); showOrder(n); }
-      catch (x) { go.disabled = false; go.textContent = "I've paid"; $("#refErr").textContent = x.message; if (x.data && x.data.order) { setOrder(x.data.order); showOrder(x.data.order); } }
+      try {
+        const fd = new FormData(); fd.append("receipt", shot, "receipt.jpg");
+        const r = await fetch(`${STORE}/order/${o.code}/paid`, { method: "POST", body: fd });
+        const n = await r.json().catch(() => ({}));
+        if (!r.ok) throw Object.assign(new Error(n.error || "Couldn't send. Check your internet and try again."), { data: n });
+        setOrder(n); showOrder(n);
+      } catch (x) { go.disabled = false; go.textContent = "Send receipt"; $("#refErr").textContent = x.message; if (x.data && x.data.order) { setOrder(x.data.order); showOrder(x.data.order); } }
     });
   } else if (o.status === "checking" || o.status === "sending" || o.status === "problem") {
     const checking = o.status === "checking";
-    payBody.innerHTML = `${head(checking ? "Payment received" : "Sending your Axies")}
+    payBody.innerHTML = `${head(checking ? "Receipt sent" : "Sending your Axies")}
       <div class="state"><div class="spin" aria-hidden="true"></div>
         <h3>${checking ? "Checking your payment" : "Sending your Axies…"}</h3>
         <p class="note">${checking
-          ? `I'm checking my GCash for <b>${peso(o.total)}</b> (ref ${esc(o.ref || "")}). Once it's confirmed, your Axies are sent to your wallet automatically.`
+          ? `I got your receipt and I'm checking my GCash for <b>${peso(o.total)}</b>. Once it's confirmed, your Axies are sent to your wallet automatically.`
           : o.status === "problem" ? "This is taking longer than usual. I'm on it, and your Axies are still held for you." : "Your payment is confirmed. This takes about a minute."}</p></div>
       ${itemsHtml(o.items)}
       <p class="note">You can close this page. Open the order link again any time to see the status.</p>${linkBtn}`;
