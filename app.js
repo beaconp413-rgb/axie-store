@@ -100,7 +100,7 @@ function renderTray(){
   $("#note").textContent = team.length === 0 ? "Pick 3 Axies" : team.length < 3 ? `${3-team.length} more to pick` : "Team complete";
   $("#copy").disabled = team.length === 0;
   $("#viewTeam").disabled = team.length < 3;
-  $("#checkout").disabled = team.length === 0;
+  $("#checkout").disabled = team.length === 0 || !!window.SHOP_CLOSED;
   $("#msgWrap").hidden = true;
   try { localStorage.setItem("axieTeam", JSON.stringify(team)); } catch(e) {}
 }
@@ -332,6 +332,27 @@ const roninShow = a => "ronin:" + a.slice(2);
 const remember = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch(e) {} };
 const recall = k => { try { return localStorage.getItem(k) || ""; } catch(e) { return ""; } };
 if (window.CHECKOUT) { $("#checkout").hidden = false; document.body.classList.add("has-checkout"); }
+function showShopState(){
+  const closed = !!window.SHOP_CLOSED;
+  $("#closedNote").hidden = !(closed && window.CHECKOUT);
+  $("#checkout").textContent = closed ? "Shop closed · back soon" : "Checkout · Pay with GCash";
+  $("#shopToggle").textContent = closed ? "🌙 Shop is CLOSED · tap to open" : "✅ Shop is OPEN · tap to close";
+  renderTray();
+}
+async function toggleShop(){
+  const btn = $("#shopToggle"), open = !!window.SHOP_CLOSED; btn.disabled = true;
+  try {
+    const r = await fetch(STORE + "/shop-open", { method: "POST", headers: { "Content-Type": "application/json", "X-Seller-Password": sellerPw }, body: JSON.stringify({ open }) });
+    if (r.status === 401) { sellerPw = null; $("#pwMsg").textContent = "Wrong password. Try again."; btn.disabled = false; return askPw(toggleShop); }
+    if (!r.ok) throw new Error(r.status);
+    $("#pwForm").hidden = true; $("#pwMsg").textContent = "";
+    window.SHOP_CLOSED = (await r.json()).closed; showShopState();
+    toast(window.SHOP_CLOSED ? "Shop closed. Buyers can browse but not check out." : "Shop open. Buyers can check out again.");
+  } catch (e) { toast("Couldn't change it. Check your internet and try again."); }
+  btn.disabled = false;
+}
+$("#shopToggle").addEventListener("click", () => { if (!sellerPw) return askPw(toggleShop); toggleShop(); });
+showShopState();
 payBody.addEventListener("input", () => payBody.querySelectorAll(".err").forEach(e => e.textContent = ""));
 
 // phone screenshots can be several MB: resize to max 1600px and send as JPEG
