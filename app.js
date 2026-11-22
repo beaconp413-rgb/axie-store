@@ -20,7 +20,7 @@ const lv2 = a => a.parts.filter(p => p[3] === 2).length;
 let team = [];
 const ACCOUNT_FEE = 100;
 let noAccount = false;
-try { noAccount = localStorage.getItem("axieNoAccount") === "1"; } catch(e) {}
+try { localStorage.removeItem("axieNoAccount"); } catch(e) {} // the "no account (+₱100)" option was removed
 const acctFee = () => noAccount ? ACCOUNT_FEE : 0;
 try { const m = byId(); team = JSON.parse(localStorage.getItem("axieTeam") || "[]").filter(id => m[id] && available(m[id])).slice(0,3); } catch(e) {}
 let activeClass = null, editing = false, dirty = false;
