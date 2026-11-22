@@ -368,6 +368,8 @@ function renderForm(){
   payBody.innerHTML = `${head("Checkout")}${itemsHtml(items)}
     <div class="pay-total"><span>Total</span><span class="big">${peso(items.reduce((s, i) => s + i.price, 0))}</span></div>
     <form id="coForm" class="pay" style="padding:0" novalidate>
+      <label class="f">Your name<span class="h">The name on your GCash account, so I can match your payment.</span>
+        <input type="text" id="coName" maxlength="60" autocomplete="name" placeholder="e.g. Juan D." value="${esc(recall("axieBuyerName"))}"></label>
       <label class="f">Your Ronin wallet address<span class="h">In the Ronin Wallet app, tap your address to copy it. It starts with ronin: or 0x.</span>
         <input type="text" class="mono" id="coAddr" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ronin:…" value="${esc(recall("axieBuyerRonin"))}"></label>
       <label class="chk"><input type="checkbox" id="coOk"><span>My address is correct. Axies sent to a wrong address can't be returned.</span></label>
@@ -378,13 +380,15 @@ function renderForm(){
   $("#coForm").addEventListener("submit", async e => {
     e.preventDefault();
     const err = t => { $("#coErr").textContent = t; };
+    const name = $("#coName").value.replace(/\s+/g, " ").trim();
+    if (name.length < 2) return err("Type your name (the name on your GCash).");
     const ronin = okRonin($("#coAddr").value);
     if (!ronin) return err("That Ronin address doesn't look right. Copy it again from the Ronin Wallet app.");
     if (!$("#coOk").checked) return err("Tick the box to confirm your address.");
-    remember("axieBuyerRonin", roninShow(ronin));
+    remember("axieBuyerRonin", roninShow(ronin)); remember("axieBuyerName", name);
     const go = $("#coGo"); go.disabled = true; go.textContent = "Placing order…"; err("");
     try {
-      const o = await api("/order", { method: "POST", body: JSON.stringify({ ids: team, ronin }) });
+      const o = await api("/order", { method: "POST", body: JSON.stringify({ ids: team, ronin, name }) });
       setOrder(o); showOrder(o);
     } catch (x) {
       go.disabled = false; go.textContent = "Place order"; err(x.message);
