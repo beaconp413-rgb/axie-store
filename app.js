@@ -461,8 +461,10 @@ function showOrder(o){
     payBody.innerHTML = `${head("Done!")}
       <div class="state"><div class="ic" aria-hidden="true">✅</div><h3>${o.confirmed ? "Your Axies are in your wallet" : "Your Axies are on the way"}</h3>
         <p class="note">Open Axie Classic to use them. Thank you for buying!</p></div>
-      <ul class="pay-items">${o.items.map(i => { const t = o.txs[i.id]; return `<li><span>${esc(i.name)} <span class="id">#${i.id}</span></span>${t && t.hash ? `<a href="https://app.roninchain.com/tx/${t.hash}" target="_blank" rel="noopener">Proof ↗</a>` : "<b>Sent</b>"}</li>`; }).join("")}</ul>
+      <ul class="pay-items">${o.items.map(i => { const t = o.txs[i.id]; return `<li><span>${esc(i.name)} <span class="id">#${i.id}</span></span><span class="links"><a href="https://app.axieinfinity.com/marketplace/axies/${i.id}/" target="_blank" rel="noopener">Marketplace ↗</a>${t && t.hash ? ` · <a href="https://app.roninchain.com/tx/${t.hash}" target="_blank" rel="noopener">Proof ↗</a>` : ""}</span></li>`; }).join("")}</ul>
+      <p class="note">Sent to this Ronin address. Tap <b>Marketplace</b> to see the Axie's owner, or check all Axies in this wallet:</p>
       <div class="addr">${roninShow(o.ronin)}</div>
+      <a class="btn ghost" href="https://app.axieinfinity.com/profile/${roninShow(o.ronin)}/axies/" target="_blank" rel="noopener">See Axies in this wallet ↗</a>
       <button class="btn" type="button" data-done>Done</button>`;
     if (!o.confirmed) pollT = setTimeout(refreshOrder, 5000);
     const ids = o.items.map(i => i.id);
