@@ -227,7 +227,7 @@ $("#sort").addEventListener("change", renderGrid);
 $("#clear").addEventListener("click", () => { team = []; renderGrid(); renderTray(); });
 $("#copy").addEventListener("click", () => {
   const text = orderText(), ta = $("#msg"); ta.value = text;
-  navigator.clipboard.writeText(text).then(() => toast("Order copied. Paste it in Messenger."), () => {
+  navigator.clipboard.writeText(text).then(() => toast("Order copied. Send it to Makoy on TikTok."), () => {
     $("#msgWrap").hidden = false; ta.focus(); ta.select(); toast("Copy the message below and send it to me.");
   });
 });
@@ -356,7 +356,7 @@ function openCheckout(){
   if (!team.length) return;
   if (noAccount) {
     payBody.innerHTML = `${head("Checkout")}
-      <p class="note">Checkout sends the Axies straight to <b>your own Ronin wallet</b>. You chose <b>None</b>, so I'll make an account for you by hand: tap <b>Copy order</b> and message me on Facebook.</p>
+      <p class="note">Checkout sends the Axies straight to <b>your own Ronin wallet</b>. You chose <b>None</b>, so I'll make an account for you by hand: tap <b>Copy order</b> and message me on TikTok (Makoy).</p>
       <button class="btn" type="button" id="coHave">I have a Ronin wallet</button>`;
     $("#coHave").addEventListener("click", () => { noAccount = false; remember("axieNoAccount", "0"); renderTray(); openCheckout(); });
   } else renderForm();
@@ -472,10 +472,12 @@ function showOrder(o){
     team = team.filter(id => !ids.includes(id)); renderGrid(); renderTray();
   } else {
     const rejected = o.status === "rejected";
-    payBody.innerHTML = `${head(rejected ? "Payment not found" : "Time's up")}
+    payBody.innerHTML = `${head(rejected ? "Payment not accepted" : "Time's up")}
       <div class="state"><div class="ic" aria-hidden="true">${rejected ? "❌" : "⏰"}</div>
         <p class="note">${rejected
-          ? `I couldn't find your GCash payment for order <b>${o.code}</b>. Message me on Facebook with a screenshot of your GCash receipt and I'll sort it out.`
+          ? `Your payment for order <b>${o.code}</b> was not accepted.</p>
+        ${o.reason ? `<div class="addr" style="font-family:var(--body);white-space:normal"><b>Reason:</b> ${esc(o.reason)}</div>` : ""}
+        <p class="note">If you think this is a mistake, message me on TikTok (<a href="https://www.tiktok.com/@makoyey" target="_blank" rel="noopener"><b>Makoy</b></a>) with your order code and GCash receipt.`
           : "The 30 minutes to pay ran out, so the Axies were released. You can order again."}</p></div>
       <button class="btn" type="button" data-done>${rejected ? "Close" : "Start over"}</button>`;
   }
