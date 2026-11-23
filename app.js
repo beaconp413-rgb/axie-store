@@ -317,7 +317,7 @@ $("#syncNow").addEventListener("click", () => {
 });
 $("#pwForm").addEventListener("submit", e => {
   e.preventDefault();
-  sellerPw = $("#pw").value; $("#pw").value = "";
+  sellerPw = $("#pw").value; $("#pw").value = ""; remember("axieSeller", "1"); // your own visits don't count as viewers on the dashboard
   if (sellerPw) (pendingAction || savePrices)();
 });
 window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
@@ -544,3 +544,27 @@ $("#checkout").addEventListener("click", openCheckout);
 })();
 
 chips(); renderGrid(); renderTray();
+
+/* ---------- shop dashboard: tell the shop "someone is looking" every 30 s (no personal data; city comes from Cloudflare) ---------- */
+(() => {
+  if (!STORE) return;
+  let sid = ""; try { sid = sessionStorage.getItem("axieSid") || ""; } catch(e) {}
+  if (!/^[a-z0-9]{8,24}$/.test(sid)) { sid = Math.random().toString(36).slice(2, 10) + Date.now().toString(36); try { sessionStorage.setItem("axieSid", sid); } catch(e) {} }
+  const where = () => {
+    if (location.hash.includes("seller")) return "seller mode";
+    if (payDlg.open) {
+      const st = curOrder && curOrder.status;
+      return !curOrder ? "checkout form" : ({ awaiting_payment: "paying (GCash)", checking: "waiting for approval", sending: "receiving Axies", sent: "order done", rejected: "order rejected", expired: "order expired" }[st] || st);
+    }
+    if (teamDlg.open) return "viewing team";
+    return team.length ? `browsing · ${team.length} picked` : "browsing";
+  };
+  let ref = ""; try { ref = document.referrer ? new URL(document.referrer).hostname : ""; } catch(e) {}
+  const beat = () => {
+    if (document.visibilityState !== "visible") return;
+    fetch(STORE + "/beat", { method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true,
+      body: JSON.stringify({ sid, page: where(), ref, seller: recall("axieSeller") === "1" || location.hash.includes("seller") }) }).catch(() => {});
+  };
+  beat(); setInterval(beat, 30000);
+  document.addEventListener("visibilitychange", beat);
+})();

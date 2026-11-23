@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Shop Dashboard · Axie Store</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+:root{
+  --bg:#F2F5EE; --surface:#FFFFFF; --sunk:#E6EBE0; --ink:#1C261F; --muted:#5E6B61; --line:#D5DDD0;
+  --accent:#3D45D6; --good:#2E8B3E; --good-bg:#E3F3E5; --warn:#B8540F; --warn-bg:#FFF0E3; --bad:#C0392B; --bad-bg:#FBE6E3;
+  --display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif; --body:"Nunito Sans",system-ui,-apple-system,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#121713; --surface:#1B221D; --sunk:#232C25; --ink:#E8EEE6; --muted:#9AA79C; --line:#2F3A31;
+  --accent:#8C93FF; --good:#6CCB7A; --good-bg:#1F3324; --warn:#F0A36A; --warn-bg:#3A2A1A; --bad:#F08A7E; --bad-bg:#3A1F1C; color-scheme:dark }}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.45 var(--body)}
+.wrap{max-width:1100px;margin:0 auto;padding:20px 16px 60px}
+h1{font:800 clamp(24px,4vw,32px)/1.1 var(--display);margin:0}
+h2{font:800 18px/1.2 var(--display);margin:0 0 12px}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-bottom:18px}
+.top .sp{flex:1}
+.pill{display:inline-flex;align-items:center;gap:6px;font:700 13px var(--body);padding:5px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface)}
+.pill.open{color:var(--good);border-color:currentColor}
+.pill.closed{color:var(--warn);border-color:currentColor}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+a{color:var(--accent)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+@media (max-width:760px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px 18px}
+.kpi .lbl{font:700 12px var(--body);color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.kpi .v{font:800 34px/1.1 var(--display);margin-top:6px;font-variant-numeric:tabular-nums}
+.kpi .sub{font-size:13px;color:var(--muted);margin-top:2px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--good);display:inline-block;box-shadow:0 0 0 0 rgba(46,139,62,.6);animation:pulse 1.8s infinite}
+.dot.off{background:var(--muted);animation:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(46,139,62,.55)}70%{box-shadow:0 0 0 10px rgba(46,139,62,0)}100%{box-shadow:0 0 0 0 rgba(46,139,62,0)}}
+@media (prefers-reduced-motion:reduce){.dot{animation:none}}
+.alert{display:flex;gap:12px;align-items:center;background:var(--warn-bg);border:1px solid var(--warn);color:var(--ink);border-radius:16px;padding:12px 16px;margin-bottom:14px;font-weight:700}
+.alert[hidden]{display:none}
+.grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:14px;margin-bottom:14px}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+.list{list-style:none;margin:0;padding:0}
+.list li{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.list li:first-child{border-top:0}
+.flag{font-size:24px;line-height:1;width:30px;text-align:center}
+.grow{flex:1;min-width:0}
+.where{font-weight:700}
+.tag{display:inline-block;font:700 12px var(--body);padding:2px 9px;border-radius:999px;background:var(--sunk);color:var(--ink);white-space:nowrap}
+.empty{color:var(--muted);padding:14px 0;text-align:center}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font:700 12px var(--body);color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:8px 8px;border-bottom:1px solid var(--line)}
+td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+.code{font:700 12px var(--mono)}
+.st{display:inline-block;font:700 12px var(--body);padding:3px 10px;border-radius:999px;white-space:nowrap}
+.st.checking{background:var(--warn-bg);color:var(--warn)}
+.st.sent{background:var(--good-bg);color:var(--good)}
+.st.rejected,.st.problem{background:var(--bad-bg);color:var(--bad)}
+.st.awaiting_payment,.st.sending{background:var(--sunk);color:var(--ink)}
+.st.expired{background:var(--sunk);color:var(--muted)}
+.tablewrap{overflow-x:auto}
+@media (max-width:640px){
+  thead{display:none}
+  #orders tr{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:12px 0;border-bottom:1px solid var(--line)}
+  #orders td{border:0;padding:0}
+  #orders td:nth-child(1){grid-column:1}
+  #orders td:nth-child(4){grid-column:2;grid-row:1}
+  #orders td:nth-child(2),#orders td:nth-child(3),#orders td:nth-child(6){grid-column:1 / -1}
+  #orders td:nth-child(5){grid-column:2;grid-row:2;text-align:right}
+  #orders td.empty{grid-column:1 / -1}
+}
+.bars{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;align-items:end;height:150px;margin-top:6px}
+.bar{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}
+.bar .track{height:96px;width:100%;display:flex;align-items:flex-end;justify-content:center}
+.bar .b{width:100%;max-width:44px;background:var(--accent);border-radius:8px 8px 3px 3px;min-height:3px}
+.bar .n{font:700 13px var(--body);font-variant-numeric:tabular-nums}
+.bar .d{font-size:12px;color:var(--muted)}
+.bar .s{font-size:11px;color:var(--good);font-weight:700;min-height:14px}
+.login{max-width:380px;margin:12vh auto;text-align:center}
+.login input{width:100%;font:600 16px var(--body);padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);margin:14px 0 10px}
+.btn{font:800 15px var(--body);border:0;border-radius:12px;padding:12px 18px;background:var(--accent);color:#fff;cursor:pointer;width:100%}
+.err{color:var(--bad);font-weight:700;min-height:20px;margin:6px 0 0}
+.new{animation:flash 2.2s ease-out}
+@keyframes flash{from{background:var(--good-bg)}to{background:transparent}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="login card" id="login">
+    <h1>Shop Dashboard</h1>
+    <p class="muted">See who's on your Axie Store right now, and every order.</p>
+    <form id="lf">
+      <label for="pw" class="small" style="font-weight:700">Seller password</label>
+      <input type="password" id="pw" autocomplete="current-password" required>
+      <button class="btn" type="submit">Open dashboard</button>
+      <p class="err" id="lerr" role="alert"></p>
+    </form>
+  </section>
+
+  <main id="app" hidden>
+    <div class="top">
+      <h1>Shop Dashboard</h1>
+      <span class="pill" id="shopPill">…</span>
+      <span class="sp"></span>
+      <span class="small muted" id="upd"></span>
+      <a class="small" href="./" target="_blank" rel="noopener">Open store ↗</a>
+      <a class="small" href="./#seller" target="_blank" rel="noopener">Seller mode ↗</a>
+    </div>
+
+    <div class="alert" id="waitAlert" hidden>🔔 <span id="waitText"></span></div>
+
+    <div class="kpis">
+      <div class="card kpi"><div class="lbl"><span class="dot off" id="liveDot"></span> Live now</div><div class="v" id="kLive">0</div><div class="sub">people on the store</div></div>
+      <div class="card kpi"><div class="lbl">Visitors today</div><div class="v" id="kVis">0</div><div class="sub" id="kVisSub">since midnight</div></div>
+      <div class="card kpi"><div class="lbl">Orders today</div><div class="v" id="kOrd">0</div><div class="sub" id="kOrdSub"></div></div>
+      <div class="card kpi"><div class="lbl">Sales today</div><div class="v" id="kSales">₱0</div><div class="sub">sent orders</div></div>
+    </div>
+
+    <div class="grid2">
+      <section class="card">
+        <h2>👀 Viewing your store right now</h2>
+        <ul class="list" id="live"></ul>
+      </section>
+      <section class="card">
+        <h2>📍 Where visitors are from <span class="small muted">(7 days)</span></h2>
+        <ul class="list" id="cities"></ul>
+      </section>
+    </div>
+
+    <section class="card" style="margin-bottom:14px">
+      <h2>🛒 Orders</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>When</th><th>Buyer</th><th>Axies</th><th style="text-align:right">Total</th><th>Status</th><th>From</th></tr></thead>
+        <tbody id="orders"></tbody>
+      </table></div>
+    </section>
+
+    <div class="grid2">
+      <section class="card">
+        <h2>📈 Visitors per day</h2>
+        <div class="bars" id="bars" role="img"></div>
+        <p class="small muted" style="margin:10px 0 0">Green = sales that day.</p>
+      </section>
+      <section class="card">
+        <h2>🕒 Recent visitors</h2>
+        <ul class="list" id="recent"></ul>
+      </section>
+    </div>
+    <p class="small muted">Locations are Cloudflare's city-level guess from the visitor's internet connection, so they can be off by a nearby city. No IP addresses are stored. Your own visits (seller mode) don't count.</p>
+  </main>
+</div>
+<script>
+const W = "https://axie-shop.beaconp413.workers.dev";
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const peso = n => "₱" + Math.round(n || 0).toLocaleString("en-PH");
+const flag = cc => /^[A-Z]{2}$/.test(cc || "") ? String.fromCodePoint(...[...cc].map(c => 127397 + c.charCodeAt(0))) : "🌐";
+const place = x => [x.city, x.region].filter(Boolean).join(", ") || (x.country ? x.country : "Unknown place");
+const dev = d => d === "Phone" ? "📱 Phone" : d === "Tablet" ? "📱 Tablet" : "💻 Computer";
+const ago = (t, now) => { const s = Math.max(0, Math.round((now - t) / 1000)); return s < 60 ? `${s}s` : s < 3600 ? `${Math.floor(s / 60)} min` : s < 86400 ? `${Math.floor(s / 3600)} h` : `${Math.floor(s / 86400)} d`; };
+const when = t => new Date(t).toLocaleString("en-PH", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+const ST = { awaiting_payment: "Not paid yet", checking: "Waiting for you", sending: "Sending", sent: "Sent ✓", rejected: "Rejected", expired: "Expired", problem: "Problem" };
+let pw = sessionStorage.getItem("axieDashPw") || "", timer = null, seenOrders = null, seenLive = null;
+
+async function load(){
+  const r = await fetch(W + "/admin/stats", { headers: { "X-Seller-Password": pw }, cache: "no-store" });
+  if (r.status === 401) { sessionStorage.removeItem("axieDashPw"); pw = ""; showLogin("Wrong password. Try again."); return false; }
+  if (!r.ok) throw new Error(r.status);
+  render(await r.json()); return true;
+}
+function render(d){
+  const now = d.now, buyers = d.live.filter(x => !x.seller);
+  $("#kLive").textContent = buyers.length; $("#liveDot").classList.toggle("off", !buyers.length);
+  $("#kVis").textContent = d.visitorsToday;
+  $("#kOrd").textContent = d.ordersToday; $("#kOrdSub").textContent = d.waiting ? `${d.waiting} waiting for approval` : "all handled";
+  $("#kSales").textContent = peso(d.salesToday);
+  const sp = $("#shopPill"); sp.className = "pill " + (d.shopClosed ? "closed" : "open"); sp.textContent = d.shopClosed ? "🌙 Shop closed" : "✅ Shop open";
+  $("#waitAlert").hidden = !d.waiting;
+  $("#waitText").textContent = `${d.waiting} order${d.waiting === 1 ? " is" : "s are"} waiting for your approval. Check your GCash, then approve in Telegram.`;
+  $("#upd").textContent = "Updated " + new Date(now).toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit", second: "2-digit" });
+
+  const liveIds = new Set(d.live.map(x => x.sid));
+  $("#live").innerHTML = d.live.length ? d.live.map(x => `<li class="${seenLive && !seenLive.has(x.sid) ? "new" : ""}">
+      <span class="flag" aria-hidden="true">${flag(x.country)}</span>
+      <div class="grow"><div class="where">${esc(place(x))}${x.seller ? ' <span class="tag">you</span>' : ""}</div>
+        <div class="small muted">${dev(x.device)} · on the store ${ago(x.first, now)}${x.ref ? " · came from " + esc(x.ref) : ""}</div></div>
+      <span class="tag">${esc(x.page)}</span></li>`).join("") : `<li class="empty">Nobody is on the store right now.</li>`;
+  const fresh = seenLive ? buyers.filter(x => !seenLive.has(x.sid)).length : 0;
+  seenLive = liveIds;
+
+  $("#cities").innerHTML = d.cities.length ? d.cities.map(c => `<li><span class="flag" aria-hidden="true">${flag(c.country)}</span><div class="grow where">${esc(place(c))}</div><span class="tag">${c.n} visit${c.n === 1 ? "" : "s"}</span></li>`).join("") : `<li class="empty">No visitors yet.</li>`;
+
+  const codes = new Set(d.orders.map(o => o.code));
+  $("#orders").innerHTML = d.orders.length ? d.orders.map(o => `<tr class="${seenOrders && !seenOrders.has(o.code) ? "new" : ""}">
+      <td class="small">${when(o.created)}<br><span class="code muted">${esc(o.code)}</span></td>
+      <td><b>${esc(o.name || "—")}</b></td>
+      <td class="small">${o.items.map(i => (i.name === "Axie #" + i.id ? "" : esc(i.name) + " ") + `<span class="muted">#${esc(i.id)}</span>`).join("<br>")}</td>
+      <td class="num">${peso(o.total)}</td>
+      <td><span class="st ${esc(o.status)}">${esc(ST[o.status] || o.status)}</span>${o.reason ? `<div class="small muted">${esc(o.reason)}</div>` : ""}</td>
+      <td class="small">${o.city || o.country ? flag(o.country) + " " + esc(o.city || o.country) : '<span class="muted">—</span>'}</td></tr>`).join("") : `<tr><td colspan="6" class="empty">No orders yet.</td></tr>`;
+  const newOrders = seenOrders ? d.orders.filter(o => !seenOrders.has(o.code)).length : 0;
+  seenOrders = codes;
+
+  const max = Math.max(1, ...d.days.map(x => x.visitors));
+  $("#bars").setAttribute("aria-label", "Visitors per day: " + d.days.map(x => `${x.day} ${x.visitors}`).join(", "));
+  $("#bars").innerHTML = d.days.map(x => `<div class="bar"><span class="s">${x.sales ? peso(x.sales) : ""}</span><span class="n">${x.visitors}</span>
+      <div class="track"><div class="b" style="height:${Math.round(x.visitors / max * 100)}%"></div></div>
+      <span class="d">${new Date(x.day + "T00:00:00").toLocaleDateString("en-PH", { weekday: "short" })}</span></div>`).join("");
+
+  $("#recent").innerHTML = d.recent.length ? d.recent.slice(0, 12).map(x => `<li><span class="flag" aria-hidden="true">${flag(x.country)}</span>
+      <div class="grow"><div class="where">${esc(place(x))}</div><div class="small muted">${dev(x.device)} · ${ago(x.first, now)} ago · stayed ${ago(x.first, x.last + 30000)}</div></div>
+      <span class="tag">${esc(x.page)}</span></li>`).join("") : `<li class="empty">No visitors yet.</li>`;
+
+  const alertN = d.waiting;
+  document.title = (alertN ? `(${alertN}) ` : "") + "Shop Dashboard · Axie Store";
+  if ((fresh || newOrders) && "Notification" in window && Notification.permission === "granted")
+    new Notification(newOrders ? "🛒 New order on your Axie Store" : `👀 ${fresh} new visitor${fresh === 1 ? "" : "s"} on your store`);
+}
+function showLogin(msg){ $("#app").hidden = true; $("#login").hidden = false; $("#lerr").textContent = msg || ""; clearInterval(timer); }
+async function start(){
+  try { if (!(await load())) return; } catch (e) { showLogin("Couldn't reach the shop. Check your internet and try again."); return; }
+  $("#login").hidden = true; $("#app").hidden = false;
+  if ("Notification" in window && Notification.permission === "default") Notification.requestPermission().catch(() => {});
+  clearInterval(timer);
+  timer = setInterval(() => { if (document.visibilityState === "visible") load().catch(() => { $("#upd").textContent = "Offline, retrying…"; }); }, 10000);
+}
+$("#lf").addEventListener("submit", e => { e.preventDefault(); pw = $("#pw").value; $("#pw").value = ""; sessionStorage.setItem("axieDashPw", pw); start(); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && pw && !$("#app").hidden) load().catch(() => {}); });
+if (pw) start();
+</script>
+</body>
+</html>
