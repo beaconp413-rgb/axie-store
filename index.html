@@ -267,6 +267,26 @@ textarea#msg{width:100%;font:12px var(--mono);border-radius:10px;border:1px soli
   .buy .btn{flex:1 1 auto}
 }
 @media (prefers-reduced-motion:reduce){.card{transition:none}.card:hover{transform:none}}
+/* ready-made teams: the seller's own 3-Axie picks, one tap fills the tray */
+.ready{margin:22px 0 0}
+.ready h2{font-family:var(--display);font-weight:800;font-size:22px;margin:0}
+.ready > p{margin:4px 0 12px;color:var(--muted);font-size:14px}
+.teams{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.rteam{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.rteam.picked{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.rteam.off{opacity:.55}
+.rteam .tn{font-family:var(--display);font-weight:800;font-size:17px;line-height:1.2;overflow-wrap:anywhere}
+.rteam .trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.rteam .trio div{background:var(--sunk);border-radius:10px;padding:4px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.rteam .trio img{width:100%;aspect-ratio:4/3;object-fit:contain}
+.rteam .trio span{font:700 10px var(--body);text-transform:uppercase;letter-spacing:.05em}
+.rteam .trio small{font:500 10px var(--mono);color:var(--muted)}
+.rteam .tfoot{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px dashed var(--line);padding-top:8px}
+.rteam .why{font-size:12px;color:var(--warn);font-weight:700}
+.rteam .del{border:0;background:none;color:var(--warn);font:700 12px var(--body);cursor:pointer;text-decoration:underline;padding:0}
+.mkteam{width:100%;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px}
+.mkteam input{flex:1 1 180px;min-width:0;font:600 13px var(--body);color:var(--ink);background:var(--surface);border:1px solid var(--edit-line);border-radius:10px;padding:8px 10px}
+@media (max-width:640px){.teams{grid-template-columns:1fr}}
 </style>
 
 <div class="wrap">
@@ -292,12 +312,21 @@ textarea#msg{width:100%;font:12px var(--mono);border-radius:10px;border:1px soli
     <button class="btn" type="button" id="save" hidden disabled>Save</button>
     <button class="btn ghost" type="button" id="syncNow">Sync now</button>
     <button class="btn ghost" type="button" id="shopToggle"></button>
+    <div class="mkteam"><b>Ready-made team:</b> pick 3 Axies (they show in the tray below), name the team, then
+      <input type="text" id="teamName" maxlength="40" placeholder="Team name, e.g. Aqua Speed Team" aria-label="Ready-made team name">
+      <button class="btn ghost" type="button" id="saveTeam">Save as ready-made team</button></div>
     <form id="pwForm" hidden style="width:100%;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
       <label for="pw" style="font-size:13px;font-weight:700">Seller password</label>
       <input type="password" id="pw" autocomplete="current-password" style="flex:1 1 200px;min-width:0;font:600 13px var(--body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px">
       <button class="btn" type="submit">Save</button>
       <span id="pwMsg" style="font-size:13px;color:var(--warn);width:100%"></span>
     </form>
+  </section>
+
+  <section class="ready" id="readySec" hidden aria-labelledby="readyTitle">
+    <h2 id="readyTitle">Ready-made teams</h2>
+    <p>Teams I put together for you. Tap <b>Pick this team</b>, then check out.</p>
+    <div class="teams" id="teams"></div>
   </section>
 
   <div class="controls">
@@ -360,14 +389,15 @@ textarea#msg{width:100%;font:12px var(--mono);border-radius:10px;border:1px soli
     window.PRICE_STORE = "https://axie-shop.beaconp413.workers.dev";
     const W = window.PRICE_STORE;
     const json = (u, dflt) => fetch(u, { cache: "no-store" }).then(r => r.ok ? r.json() : dflt).catch(() => dflt);
-    const [prices, wallet, cards, lv2, cfg] = await Promise.all([json(W + "/store/prices", null), json(W + "/store/wallet", null),
-      get("data/cards.json"), get("data/cards-lv2.json"), json(W + "/config", {})]);
+    const [prices, wallet, cards, lv2, cfg, teams] = await Promise.all([json(W + "/store/prices", null), json(W + "/store/wallet", null),
+      get("data/cards.json"), get("data/cards-lv2.json"), json(W + "/config", {}), json(W + "/store/teams", [])]);
     if (!prices || !wallet) throw new Error("store");
     window.AXIES = wallet.axies || []; window.PRICES = prices; window.CARDS_LV2 = lv2;
     window.CARDS = Object.assign({}, wallet.cards || {}, cards);
     window.SYNC = { syncedAt: wallet.syncedAt };
     window.CHECKOUT = !!(cfg.checkout || cfg.test);
     window.SHOP_CLOSED = !!cfg.closed;
+    window.TEAMS = Array.isArray(teams) ? teams : [];
   } catch (e) {
     document.getElementById("grid").innerHTML = '<p class="count">Couldn&#39;t load the Axies. Refresh the page to try again.</p>';
     return;

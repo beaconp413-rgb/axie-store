@@ -79,8 +79,44 @@ function card(a){
   </article>`;
 }
 
+/* ---------- ready-made teams (the seller's picks; buyers fill the tray with one tap) ---------- */
+let TEAMS = window.TEAMS || [];
+const isSeller = () => !$("#ownerBar").hidden;
+function renderTeams(){
+  const m = byId();
+  const ok = t => t.ids.every(id => m[id] && available(m[id]));
+  const shown = isSeller() ? TEAMS : TEAMS.filter(ok);
+  $("#readySec").hidden = !shown.length;
+  $("#teams").innerHTML = shown.map(t => {
+    const mem = t.ids.map(id => m[id]), good = ok(t);
+    const picked = good && team.length === 3 && t.ids.every(id => team.includes(id));
+    const total = good ? t.ids.reduce((s, id) => s + m[id].price, 0) : 0;
+    return `<article class="rteam ${picked ? "picked" : ""} ${good ? "" : "off"}">
+      <div class="tn">${esc(t.name)}</div>
+      <div class="trio">${mem.map((a, i) => a ? `<div><img data-ax="${a.id}" src="${img(a.id)}" alt="${a.cls} Axie ${a.id}" loading="lazy"><span style="color:${cv(a.cls)}">${POS[i]} · ${a.cls}</span><small>#${a.id}</small></div>`
+        : `<div><span>${POS[i]}</span><small>#${t.ids[i]} gone</small></div>`).join("")}</div>
+      <div class="tfoot">${good ? `<div class="price">${peso(total)}</div>` : `<span class="why">Hidden from buyers: an Axie is sold, gone, or has no price</span>`}
+        ${good ? `<button class="btn ${picked ? "ghost" : ""}" type="button" data-pick="${t.id}">${picked ? "Picked ✓" : "Pick this team"}</button>` : ""}</div>
+      ${isSeller() ? `<button class="del" type="button" data-del="${t.id}">Delete this ready-made team</button>` : ""}
+    </article>`;
+  }).join("");
+}
+$("#teams").addEventListener("click", e => {
+  const d = e.target.closest("[data-del]");
+  if (d) {
+    const t = TEAMS.find(x => x.id === d.dataset.del);
+    if (t && confirm(`Delete the ready-made team "${t.name}"?`)) saveTeams(TEAMS.filter(x => x !== t), "Team deleted.");
+    return;
+  }
+  const b = e.target.closest("[data-pick]"); if (!b) return;
+  const t = TEAMS.find(x => x.id === b.dataset.pick); if (!t) return;
+  team = [...t.ids]; renderGrid(); renderTray();
+  toast(window.CHECKOUT && !window.SHOP_CLOSED ? "Team added. Tap Checkout to buy it." : "Team added. Tap View team to see it.");
+});
+
 function renderGrid(){
   document.body.classList.toggle("editing", editing);
+  renderTeams();
   const items = list();
   $("#count").textContent = `${items.length} Axie${items.length === 1 ? "" : "s"} shown`;
   grid.innerHTML = items.map(card).join("") || `<p class="count">No Axies match that search.</p>`;
@@ -272,7 +308,7 @@ function showSeller(){
   const unpriced = AXIES.filter(a => !priced(a)).length;
   $("#ownerText").innerHTML = `<b>Seller mode.</b> ${unpriced ? `${unpriced} Axie${unpriced === 1 ? " has" : "s have"} no price yet. ` : ""}Set prices and mark sold Axies, then press <b>Save</b>. Buyers see changes right away. Just bought or sold an Axie? Press <b>Sync now</b>.`;
 }
-$("#sellerLink").addEventListener("click", () => { if ($("#ownerBar").hidden) { showSeller(); $("#ownerBar").scrollIntoView({ behavior: "smooth" }); } else $("#ownerBar").hidden = true; });
+$("#sellerLink").addEventListener("click", () => { if ($("#ownerBar").hidden) { showSeller(); renderTeams(); $("#ownerBar").scrollIntoView({ behavior: "smooth" }); } else { $("#ownerBar").hidden = true; renderTeams(); } });
 if (location.hash.includes("seller")) showSeller();
 
 async function savePrices(){
@@ -314,6 +350,26 @@ $("#syncNow").addEventListener("click", () => {
   if (!STORE) return;
   if (!sellerPw) return askPw(syncNow);
   syncNow();
+});
+async function saveTeams(list, done){
+  if (!STORE) return;
+  if (!sellerPw) return askPw(() => saveTeams(list, done));
+  try {
+    const r = await fetch(STORE + "/store/teams", { method: "PUT", headers: { "Content-Type": "application/json", "X-Seller-Password": sellerPw }, body: JSON.stringify(list) });
+    if (r.status === 401) { sellerPw = null; $("#pwMsg").textContent = "Wrong password. Try again."; return askPw(() => saveTeams(list, done)); }
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || r.status);
+    $("#pwForm").hidden = true; $("#pwMsg").textContent = "";
+    TEAMS = j.teams; renderTeams(); toast(done);
+  } catch (e) { toast("Couldn't save the team. Check your internet and try again."); }
+}
+$("#saveTeam").addEventListener("click", () => {
+  if (team.length !== 3) { toast("Pick exactly 3 Axies first. They show in the tray at the bottom."); return; }
+  const name = $("#teamName").value.replace(/\s+/g, " ").trim();
+  if (!name) { toast("Type a name for the team first."); $("#teamName").focus(); return; }
+  if (TEAMS.some(t => t.ids.length === 3 && t.ids.every(id => team.includes(id)))) { toast("You already have a ready-made team with these 3 Axies."); return; }
+  if (TEAMS.length >= 40) { toast("You have 40 ready-made teams. Delete one first."); return; }
+  saveTeams([...TEAMS, { name, ids: [...team] }], `Saved "${name}". Buyers see it now.`).then(() => { if (TEAMS.some(t => t.name === name.slice(0, 40))) $("#teamName").value = ""; });
 });
 $("#pwForm").addEventListener("submit", e => {
   e.preventDefault();
